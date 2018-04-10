@@ -16,16 +16,49 @@ int main(int argc, char* argv[]) {
     struct stat buf;
     stat(so_file_name, &buf);
     size_t so_file_size = buf.st_size;
-    std::cout << "file name: " << so_file_name << " file size: " << so_file_size << std::endl;
+    printf("file name %s, file size: %lu\n", so_file_name, so_file_size);
 
     // read so
     u1* so = new u1[so_file_size];
     int so_fd = open(so_file_name, O_RDONLY);
     read(so_fd, so, so_file_size);
     close(so_fd);
-    std::cout << "read so success" << std::endl;
+    printf("read so success\n");
 
-    
+    // find load program
+    // find dynamic program
+    Elf32_Ehdr* so_header = (Elf32_Ehdr*)(so);
+    printf("program header count: %d\n", so_header->e_phnum);
+    Elf32_Phdr* program_iterator = (Elf32_Phdr*)(so + so_header->e_phoff);
+
+    Elf32_Phdr* first_load_program = NULL;
+    Elf32_Phdr* last_load_program = NULL;
+    Elf32_Phdr* dynamic_program = NULL;
+
+    for (int i = 0; i < so_header->e_phnum; ++i) {
+        printf("index %d, type %d\n", i, program_iterator->p_type);
+        switch(program_iterator->p_type) {
+            case PT_LOAD:
+                if (first_load_program == NULL) {
+                    printf("find first load program\n");
+                    first_load_program = program_iterator;
+                } else {
+                    printf("find load program\n");
+                    last_load_program = program_iterator;
+                }
+                break;
+            case PT_DYNAMIC:
+                printf("find dynamic program\n");
+                dynamic_program = program_iterator;
+                break;
+        }
+
+        ++program_iterator;
+    }
+
+    Elf32_Shdr* section_iterator = (Elf32_Shdr*)(so + so_header->e_shoff);
+    // TODO find section to write
+
     // release
     delete[] so;
     return 0;
