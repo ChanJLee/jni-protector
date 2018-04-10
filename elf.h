@@ -30,7 +30,6 @@
  * formerly known as "elf_abi.h".
  */
 
-#include <windows.h>
 #ifndef _SYS_EXEC_ELF_H_
 #define _SYS_EXEC_ELF_H_
 
@@ -39,8 +38,8 @@ typedef unsigned int  __uint32_t;
 typedef int  __int32_t;
 typedef short  __int16_t;
 typedef unsigned short  __uint16_t;
-typedef UINT64  __uint64_t;
-typedef INT64  __int64_t;
+typedef unsigned long long  __uint64_t;
+typedef long long  __int64_t;
 
 
 typedef __uint8_t	Elf_Byte;
