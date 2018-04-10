@@ -36,7 +36,6 @@ int main(int argc, char* argv[]) {
     Elf32_Phdr* dynamic_program = NULL;
 
     for (int i = 0; i < so_header->e_phnum; ++i) {
-        printf("index %d, type %d\n", i, program_iterator->p_type);
         switch(program_iterator->p_type) {
             case PT_LOAD:
                 if (first_load_program == NULL) {
