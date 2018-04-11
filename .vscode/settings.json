@@ -14,6 +14,7 @@
         "string_view": "cpp",
         "utility": "cpp",
         "istream": "cpp",
-        "atomic": "cpp"
+        "atomic": "cpp",
+        "locale": "cpp"
     }
 }
