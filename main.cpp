@@ -33,9 +33,11 @@ int main(int argc, char* argv[]) {
 
     Elf32_Phdr* first_load_program = NULL;
     Elf32_Phdr* last_load_program = NULL;
-    Elf32_Phdr* dynamic_program = NULL;
 
     for (int i = 0; i < so_header->e_phnum; ++i) {
+        if (program_iterator->p_type != PT_LOAD) {
+            continue;
+        }
         switch(program_iterator->p_type) {
             case PT_LOAD:
                 if (first_load_program == NULL) {
@@ -45,10 +47,6 @@ int main(int argc, char* argv[]) {
                     printf("find load program\n");
                     last_load_program = program_iterator;
                 }
-                break;
-            case PT_DYNAMIC:
-                printf("find dynamic program\n");
-                dynamic_program = program_iterator;
                 break;
         }
 
