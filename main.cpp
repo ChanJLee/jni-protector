@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
     const char *so_file_name = "libyasc.so";
     const char *payload_file_name = "libpoker.so";
     const char *dest_file_name = "libyasc_dest.so";
+    const char *section_name = ".payload";
 
     // fetch so file size
     struct stat so_buf;
@@ -28,7 +29,7 @@ int main(int argc, char *argv[])
     size_t payload_file_size = payload_buf.st_size;
     printf("payload file name %s, file size: %lu\n", payload_file_name, payload_file_size);
 
-      // read so
+    // read so
     u1 *so = new u1[so_file_size * 2 + payload_file_size];
     memset(so, 0, so_file_size * 2 + payload_file_size);
     ScopeArray<u1> so_scope_array(so);
@@ -45,9 +46,8 @@ int main(int argc, char *argv[])
     printf("read payload success\n");
 
     // find load program
-    // find dynamic program
     Elf32_Ehdr *so_header = (Elf32_Ehdr *)(so);
-    printf("program header count: %d", so_header->e_phnum);
+    printf("program header count: %d\n", so_header->e_phnum);
     Elf32_Phdr *program_iterator = (Elf32_Phdr *)(so + so_header->e_phoff);
 
     Elf32_Phdr *first_load_program = NULL;
@@ -89,13 +89,48 @@ int main(int argc, char *argv[])
         }
         else
         {
-            // TODO copy elf32 section table
+            const size_t section_table_size = sizeof(Elf32_Shdr) * so_header->e_shnum;
+            memcpy(so + so_file_size, so + so_header->e_shoff, section_table_size);
+            so_header->e_shoff = so_file_size;
+            so_file_size += section_table_size;
+            section_iterator = (Elf32_Shdr *)(so + so_file_size);
         }
     }
     else
     {
         new_section_address = first_load_program->p_filesz;
     }
+
+    // find str table section
+    size_t write_size = new_section_address + ALIGN(strlen(section_name) + 1, 0x10) + payload_file_size;
+    u1 *cache = new u1[write_size];
+    ScopeArray<u1> cache_scope_array(cache);
+    memset(cache, 0, write_size);
+    Elf32_Shdr *str_table_section = section_iterator + so_header->e_shstrndx;
+    str_table_section->sh_size = new_section_address - str_table_section->sh_offset + strlen(section_name) + 1;
+    strcpy((char *)cache + new_section_address, section_name);
+
+    Elf32_Shdr section = {0};
+    section.sh_name = new_section_address - str_table_section->sh_offset;
+    section.sh_type = SHT_PROGBITS;
+    section.sh_flags = SHF_WRITE | SHF_ALLOC | SHF_EXECINSTR;
+    new_section_address += ALIGN(strlen(section_name) + 1, 0x10);
+    section.sh_size = payload_file_size;
+    section.sh_addr = new_section_address;
+    section.sh_addralign = 0x10;
+
+    first_load_program->p_filesz = write_size;
+    first_load_program->p_memsz = new_section_address + payload_file_size;
+    first_load_program->p_flags = 7;
+
+    ++so_header->e_shnum;
+
+    memcpy(cache, so, so_file_size);
+    memcpy(cache + so_file_size, &section, sizeof(Elf32_Shdr));
+
+    int dest_fd = open(dest_file_name, O_WRONLY | O_CREAT);
+    write(dest_fd, cache, write_size);
+    close(dest_fd);
 
     return 0;
 }
