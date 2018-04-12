@@ -81,19 +81,19 @@ int main(int argc, char *argv[])
         // if section header is not at the end of file
         if (so_header->e_shoff + sizeof(Elf32_Shdr) * so_header->e_shnum != so_buf.st_size)
         {
-            if (so_header->e_shoff + sizeof(Elf32_Shdr) * (so_header->e_shnum + 1) > new_section_address)
+            if (so_file_size + so_header->e_shoff + sizeof(Elf32_Shdr) * (so_header->e_shnum + 1) > new_section_address)
             {
                 printf("can not write section");
                 return -1;
             }
-        }
-        else
-        {
-            const size_t section_table_size = sizeof(Elf32_Shdr) * so_header->e_shnum;
-            memcpy(so + so_file_size, so + so_header->e_shoff, section_table_size);
-            so_header->e_shoff = so_file_size;
-            so_file_size += section_table_size;
-            section_iterator = (Elf32_Shdr *)(so + so_file_size);
+            else
+            {
+                const size_t section_table_size = sizeof(Elf32_Shdr) * so_header->e_shnum;
+                memcpy(so + so_file_size, so + so_header->e_shoff, section_table_size);
+                so_header->e_shoff = so_file_size;
+                so_file_size += section_table_size;
+                section_iterator = (Elf32_Shdr *)(so + so_file_size);
+            }
         }
     }
     else
