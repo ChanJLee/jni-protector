@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
         // if section header is not at the end of file
         if (so_header->e_shoff + sizeof(Elf32_Shdr) * so_header->e_shnum != so_buf.st_size)
         {
-            if (so_file_size + so_header->e_shoff + sizeof(Elf32_Shdr) * (so_header->e_shnum + 1) > new_section_address)
+            if (so_file_size + sizeof(Elf32_Shdr) * (so_header->e_shnum + 1) > new_section_address)
             {
                 printf("can not write section");
                 return -1;
@@ -102,19 +102,20 @@ int main(int argc, char *argv[])
     }
 
     // find str table section
-    size_t write_size = new_section_address + ALIGN(strlen(section_name) + 1, 0x10) + payload_file_size;
-    u1 *cache = new u1[write_size];
-    ScopeArray<u1> cache_scope_array(cache);
+    size_t section_name_len = strlen(section_name) + 1;
+    size_t write_size = new_section_address + ALIGN(section_name_len, 0x10) + payload_file_size;
+    char *cache = new char[write_size];
+    ScopeArray<char> cache_scope_array(cache);
     memset(cache, 0, write_size);
     Elf32_Shdr *str_table_section = section_iterator + so_header->e_shstrndx;
     str_table_section->sh_size = new_section_address - str_table_section->sh_offset + strlen(section_name) + 1;
-    strcpy((char *)cache + new_section_address, section_name);
+    strcpy(cache + new_section_address, section_name);
 
     Elf32_Shdr section = {0};
     section.sh_name = new_section_address - str_table_section->sh_offset;
     section.sh_type = SHT_PROGBITS;
     section.sh_flags = SHF_WRITE | SHF_ALLOC | SHF_EXECINSTR;
-    new_section_address += ALIGN(strlen(section_name) + 1, 0x10);
+    new_section_address += ALIGN(section_name_len, 0x10);
     section.sh_size = payload_file_size;
     section.sh_addr = new_section_address;
     section.sh_addralign = 0x10;
