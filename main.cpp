@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
     new_section_address += ALIGN(section_name_len, 0x10);
     section.sh_size = payload_file_size;
     section.sh_addr = new_section_address;
+    memcpy((void *) (cache + new_section_address), payload, payload_file_size);
     section.sh_addralign = 0x10;
 
     first_load_program->p_filesz = write_size;
