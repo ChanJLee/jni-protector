@@ -66,11 +66,16 @@ int register_all_func(JNIEnv *env)
 IMPL_FUNC(jint, load)
 {
     char *so = (char *)fetch_so();
+    if (so == NULL)
+    {
+        return ERROR_ADDRESS;
+    }
+
     Elf32_Ehdr *header = (Elf32_Ehdr *)so;
     if (!IS_ELF(*header))
     {
         LOGD("can not find so!");
-        return -1;
+        return ERROR_INVALID_ELF;
     }
 
     LOGD("program count %d", header->e_phnum);
@@ -87,11 +92,15 @@ IMPL_FUNC(jint, load)
         }
     }
 
-    if (it == end) 
+    if (it == end)
     {
         LOGD("can not find load segment");
-        return -1;
+        return ERROR_INVALID_ELF;
     }
+
+    char *segment_start = so + it->p_paddr;
+    char *segment_end = segment_start + it->p_memsz;
+    LOGD("so address: 0x%x segment start 0x%x segment end 0x%x", (address)so, (address)segment_start, (address)segment_end);
 
     return 0;
 }
@@ -126,6 +135,7 @@ void *fetch_so()
             continue;
         }
 
+        LOGD("find so, start 0x%s end 0x%s", mem_address_start_s, mem_address_end_s);
         fclose(maps_file);
         return (void *)strtoul(mem_address_start_s, NULL, 16);
     }

@@ -29,16 +29,10 @@
 #define LOGI(...) (void*) 0
 #endif
 
-const int ERROR_RUNTIME = -1;
-const int ERROR_REPACKAGE = -2;
-const int ERROR_RESIGNATURE = -3;
+const int ERROR_ADDRESS = -1;
+const int ERROR_INVALID_ELF = -2;
 
-const int RAW_MD5_LEN = 16;
-const int MD5_LEN = ((RAW_MD5_LEN) * 2 + 1);
-
-typedef unsigned int u4;
-typedef unsigned char u1;
-
+typedef unsigned int address;
 
 /* java function name */
 #define JAVA_FUNC__(FUNC) #FUNC
