@@ -98,9 +98,32 @@ IMPL_FUNC(jint, load)
         return ERROR_INVALID_ELF;
     }
 
+    if (it->p_memsz < sizeof(Elf32_Ehdr))
+    {
+        LOGD("too small");
+        return ERROR_INVALID_ELF;
+    }
+
     char *segment_start = so + it->p_paddr;
     char *segment_end = segment_start + it->p_memsz;
     LOGD("so address: 0x%x segment start 0x%x segment end 0x%x", (address)so, (address)segment_start, (address)segment_end);
+    char *scanner = segment_end - sizeof(Elf32_Ehdr);
+    for (; scanner > segment_start; --scanner)
+    {
+        if (scanner[EI_MAG0] == ELFMAG0 &&
+            scanner[EI_MAG1] == ELFMAG1 &&
+            scanner[EI_MAG2] == ELFMAG2 &&
+            scanner[EI_MAG3] == ELFMAG3) {
+                LOGD("find payload");
+                break;
+            }
+    }
+
+    if (scanner <= segment_start)
+    {
+        LOGD("find nothing");
+        return ERROR_INVALID_PAYLOAD;
+    }
 
     return 0;
 }

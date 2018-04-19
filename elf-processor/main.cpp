@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "scope_array.h"
-#include "elf.h"
+#include "../yasc/elf.h"
 
 typedef unsigned char u1;
 
@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
         // if section header is not at the end of file
         if (so_header->e_shoff + sizeof(Elf32_Shdr) * so_header->e_shnum != so_buf.st_size)
         {
+            printf("section header is not at the end of file");
             if (so_file_size + sizeof(Elf32_Shdr) * (so_header->e_shnum + 1) > new_section_address)
             {
                 printf("can not write section");
@@ -103,7 +104,8 @@ int main(int argc, char *argv[])
 
     // find str table section
     size_t section_name_len = strlen(section_name) + 1;
-    size_t write_size = new_section_address + ALIGN(section_name_len, 0x10) + payload_file_size;
+    int align = 0x8;
+    size_t write_size = new_section_address + ALIGN(section_name_len, align) + payload_file_size;
     char *cache = new char[write_size];
     ScopeArray<char> cache_scope_array(cache);
     memset(cache, 0, write_size);
@@ -114,16 +116,16 @@ int main(int argc, char *argv[])
     Elf32_Shdr section = {0};
     section.sh_name = new_section_address - str_table_section->sh_offset;
     section.sh_type = SHT_PROGBITS;
-    section.sh_flags = SHF_WRITE | SHF_ALLOC | SHF_EXECINSTR;
-    new_section_address += ALIGN(section_name_len, 0x10);
+    section.sh_flags = SHF_ALLOC;
+    new_section_address += ALIGN(section_name_len, align);
     section.sh_size = payload_file_size;
     section.sh_addr = new_section_address;
     memcpy(cache + new_section_address, payload, payload_file_size);
-    section.sh_addralign = 0x10;
+    section.sh_addralign = align;
 
     first_load_program->p_filesz = write_size;
     first_load_program->p_memsz = new_section_address + payload_file_size;
-    first_load_program->p_flags = 7;
+    //first_load_program->p_flags = 7;
 
     ++so_header->e_shnum;
 

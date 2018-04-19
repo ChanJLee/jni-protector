@@ -5,4 +5,9 @@ package com.chan.lib;
  */
 
 public class Yasc {
+	static {
+		System.loadLibrary("yasc");
+	}
+
+	public static native int load();
 }

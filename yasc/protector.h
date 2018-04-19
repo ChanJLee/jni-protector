@@ -31,6 +31,7 @@
 
 const int ERROR_ADDRESS = -1;
 const int ERROR_INVALID_ELF = -2;
+const int ERROR_INVALID_PAYLOAD = -3;
 
 typedef unsigned int address;
 

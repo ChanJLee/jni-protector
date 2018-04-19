@@ -15,6 +15,3 @@ clean:
 	rm -rf *.h~
 	rm -rf obj/
 	rm -rf libs/
-
-install:
-	adb push libs/armeabi-v7a/libpoker.so /sdcard/libpoker.so

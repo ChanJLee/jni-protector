@@ -15,6 +15,11 @@
         "utility": "cpp",
         "istream": "cpp",
         "atomic": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "sstream": "cpp",
+        "__bit_reference": "cpp",
+        "__string": "cpp",
+        "algorithm": "cpp",
+        "__locale": "cpp"
     }
 }
