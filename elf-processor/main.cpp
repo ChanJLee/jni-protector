@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 
     Elf32_Shdr *section_iterator = (Elf32_Shdr *)(so + so_header->e_shoff);
 
-    Elf32_Addr new_section_address = ALIGN(last_load_program->p_paddr + last_load_program->p_memsz - first_load_program->p_vaddr, last_load_program->p_align);
+    Elf32_Addr new_section_address = ALIGN(last_load_program->p_vaddr + last_load_program->p_memsz - first_load_program->p_vaddr, last_load_program->p_align);
     if (first_load_program->p_vaddr + first_load_program->p_filesz <
         ALIGN(last_load_program->p_paddr + last_load_program->p_memsz, last_load_program->p_align))
     {
@@ -99,13 +99,16 @@ int main(int argc, char *argv[])
     }
     else
     {
-        new_section_address = first_load_program->p_filesz;
+        new_section_address = first_load_program->p_memsz;
     }
 
     // find str table section
     size_t section_name_len = strlen(section_name) + 1;
     int align = 0x8;
+
     size_t write_size = new_section_address + ALIGN(section_name_len, align) + payload_file_size;
+    printf("write size: %lu\n", write_size);
+
     char *cache = new char[write_size];
     ScopeArray<char> cache_scope_array(cache);
     memset(cache, 0, write_size);
@@ -124,7 +127,7 @@ int main(int argc, char *argv[])
     section.sh_addralign = align;
 
     first_load_program->p_filesz = write_size;
-    first_load_program->p_memsz += payload_file_size;
+    first_load_program->p_memsz = new_section_address + payload_file_size;
     //first_load_program->p_flags = 7;
 
     ++so_header->e_shnum;
