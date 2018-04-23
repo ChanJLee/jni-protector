@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     section.sh_addralign = align;
 
     first_load_program->p_filesz = write_size;
-    first_load_program->p_memsz = new_section_address + payload_file_size;
+    first_load_program->p_memsz += payload_file_size;
     //first_load_program->p_flags = 7;
 
     ++so_header->e_shnum;
