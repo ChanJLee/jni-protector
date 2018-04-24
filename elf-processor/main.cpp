@@ -74,21 +74,26 @@ int main(int argc, char *argv[])
 
     Elf32_Shdr *section_iterator = (Elf32_Shdr *)(so + so_header->e_shoff);
 
+    printf("first segment start 0x%x end 0x%x\n", first_load_program->p_vaddr, (first_load_program->p_vaddr + first_load_program->p_memsz));
+    printf("last segment start 0x%x end 0x%x\n", last_load_program->p_vaddr, (last_load_program->p_vaddr + last_load_program->p_memsz));
+
     Elf32_Addr new_section_address = ALIGN(last_load_program->p_vaddr + last_load_program->p_memsz - first_load_program->p_vaddr, last_load_program->p_align);
-    if (first_load_program->p_vaddr + first_load_program->p_filesz <
-        ALIGN(last_load_program->p_paddr + last_load_program->p_memsz, last_load_program->p_align))
+    if (first_load_program->p_vaddr + first_load_program->p_memsz <
+        ALIGN(last_load_program->p_vaddr + last_load_program->p_memsz, last_load_program->p_align))
     {
+        printf("load segment is separated\n");
         // if section header is not at the end of file
         if (so_header->e_shoff + sizeof(Elf32_Shdr) * so_header->e_shnum != so_buf.st_size)
         {
-            printf("section header is not at the end of file");
+            printf("section header is not at the end of file\n");
             if (so_file_size + sizeof(Elf32_Shdr) * (so_header->e_shnum + 1) > new_section_address)
             {
-                printf("can not write section");
+                printf("can not write section\n");
                 return -1;
             }
             else
             {
+                printf("copy section table to the end of file\n");
                 const size_t section_table_size = sizeof(Elf32_Shdr) * so_header->e_shnum;
                 memcpy(so + so_file_size, so + so_header->e_shoff, section_table_size);
                 so_header->e_shoff = so_file_size;
@@ -99,9 +104,11 @@ int main(int argc, char *argv[])
     }
     else
     {
+        printf("first segment contains last segment\n");
         new_section_address = first_load_program->p_memsz;
     }
 
+    printf("write new section to 0x%x\n", new_section_address);
     // find str table section
     size_t section_name_len = strlen(section_name) + 1;
     int align = 0x8;
@@ -126,9 +133,17 @@ int main(int argc, char *argv[])
     memcpy(cache + new_section_address, payload, payload_file_size);
     section.sh_addralign = align;
 
-    first_load_program->p_filesz = write_size;
-    first_load_program->p_memsz = new_section_address + payload_file_size;
-    //first_load_program->p_flags = 7;
+    if (first_load_program->p_vaddr + first_load_program->p_memsz <
+        ALIGN(last_load_program->p_vaddr + last_load_program->p_memsz, last_load_program->p_align))
+    {
+        last_load_program->p_memsz = write_size - last_load_program->p_vaddr;
+        printf("new last segment start 0x%x end 0x%lx size 0x%x\n", last_load_program->p_vaddr, write_size, last_load_program->p_memsz);
+    }
+    else
+    {
+        first_load_program->p_filesz = write_size;
+        first_load_program->p_memsz = new_section_address + payload_file_size;
+    }
 
     ++so_header->e_shnum;
 
