@@ -125,8 +125,8 @@ int main(int argc, char *argv[])
 
     Elf32_Shdr section = {0};
     section.sh_name = new_section_address - str_table_section->sh_offset;
-    section.sh_type = SHT_PROGBITS;
-    section.sh_flags = SHF_ALLOC;
+    section.sh_type = SHT_NOBITS;
+    section.sh_flags = SHF_ALLOC | SHF_EXECINSTR;
     new_section_address += ALIGN(section_name_len, align);
     section.sh_size = payload_file_size;
     section.sh_addr = new_section_address;
@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
     if (first_load_program->p_vaddr + first_load_program->p_memsz <
         ALIGN(last_load_program->p_vaddr + last_load_program->p_memsz, last_load_program->p_align))
     {
+        last_load_program->p_filesz = write_size - last_load_program->p_offset;
         last_load_program->p_memsz = write_size - last_load_program->p_vaddr;
         printf("new last segment start 0x%x end 0x%lx size 0x%x\n", last_load_program->p_vaddr, write_size, last_load_program->p_memsz);
     }
