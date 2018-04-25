@@ -144,6 +144,7 @@ int main(int argc, char *argv[])
     {
         first_load_program->p_filesz = write_size;
         first_load_program->p_memsz = new_section_address + payload_file_size;
+        printf("new first segment start 0x%x end 0x%lx size 0x%x\n", first_load_program->p_vaddr, write_size, first_load_program->p_memsz);
     }
 
     ++so_header->e_shnum;
